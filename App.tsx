@@ -1,8 +1,8 @@
 import React from 'react';
-import {BluetoothScannerScreen} from './src/features/bluetooth/presentation/BluetoothScannerScreen';
+import {BluetoothPeripheralScreen} from './src/features/bluetooth/peripheral/BluetoothPeripheralScreen';
 
 function App() {
-  return <BluetoothScannerScreen />;
+  return <BluetoothPeripheralScreen />;
 }
 
 export default App;
