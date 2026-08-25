@@ -1,8 +1,8 @@
 import React from 'react';
-import {BluetoothPeripheralScreen} from './src/features/bluetooth/peripheral/BluetoothPeripheralScreen';
+import {BluetoothModeScreen} from './src/features/bluetooth/presentation/BluetoothModeScreen';
 
 function App() {
-  return <BluetoothPeripheralScreen />;
+  return <BluetoothModeScreen />;
 }
 
 export default App;
