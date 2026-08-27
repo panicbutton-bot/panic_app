@@ -1,17 +1,12 @@
-import {BleManager, Device} from 'react-native-ble-plx';
+import {Device} from 'react-native-ble-plx';
+import {bluetoothManager} from './BluetoothManager';
 
 export class BluetoothScanner {
-  private manager: BleManager;
-
-  constructor() {
-    this.manager = new BleManager();
-  }
-
   scan(
     onDeviceFound: (device: Device) => void,
     onError: (error: Error) => void,
   ): void {
-    this.manager.startDeviceScan(
+    bluetoothManager.startDeviceScan(
       null,
       null,
       (error, device) => {
@@ -28,10 +23,10 @@ export class BluetoothScanner {
   }
 
   stop(): void {
-    this.manager.stopDeviceScan();
+    bluetoothManager.stopDeviceScan();
   }
 
   destroy(): void {
-    this.manager.destroy();
+    // The shared BLE manager must not be destroyed here.
   }
 }

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {Device} from 'react-native-ble-plx';
 import {BluetoothScanner} from '../data/BluetoothScanner';
+import {BluetoothConnection} from '../data/BluetoothConnection';
 
 async function requestBluetoothPermissions(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -42,11 +43,19 @@ async function requestBluetoothPermissions(): Promise<boolean> {
 
 export function BluetoothScannerScreen() {
   const scanner = useRef(new BluetoothScanner()).current;
-
+  const connection = useRef(new BluetoothConnection()).current;
   const [devices, setDevices] = useState<Device[]>([]);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(
+  null,
+);
 
+  const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(
+  null,
+);
+
+  const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const startScan = async () => {
     setError(null);
 
@@ -87,12 +96,40 @@ export function BluetoothScannerScreen() {
     setScanning(false);
   };
 
+const connectToDevice = async (device: Device) => {
+  try {
+    setError(null);
+    setConnectionStatus(`Connecting to ${device.name || device.id}...`);
+    setConnectingDeviceId(device.id);
+
+    scanner.stop();
+    setScanning(false);
+
+    const connectedDevice = await connection.connect(device.id);
+
+    setConnectedDeviceId(connectedDevice.id);
+    setConnectionStatus(
+      `Connected to ${connectedDevice.name || connectedDevice.id}`,
+    );
+  } catch (connectError) {
+    const message =
+      connectError instanceof Error
+        ? connectError.message
+        : 'Failed to connect to device.';
+
+    setError(message);
+    setConnectionStatus(null);
+  } finally {
+    setConnectingDeviceId(null);
+  }
+};
+
   useEffect(() => {
-    return () => {
-      scanner.stop();
-      scanner.destroy();
-    };
-  }, [scanner]);
+  return () => {
+    scanner.stop();
+    scanner.destroy();
+  };
+}, [scanner]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -106,6 +143,10 @@ export function BluetoothScannerScreen() {
         </Text>
       </Pressable>
 
+{connectionStatus && (
+  <Text style={styles.connectionStatus}>{connectionStatus}</Text>
+)}
+
       {error && <Text style={styles.error}>{error}</Text>}
 
       <Text style={styles.count}>
@@ -113,19 +154,32 @@ export function BluetoothScannerScreen() {
       </Text>
 
       <ScrollView>
-        {devices.map(device => (
-          <View key={device.id} style={styles.device}>
-            <Text style={styles.deviceName}>
-              {device.name || 'Unknown device'}
-            </Text>
+       {devices.map(device => (
+  <View key={device.id} style={styles.device}>
+    <Text style={styles.deviceName}>
+      {device.name || 'Unknown device'}
+    </Text>
 
-            <Text style={styles.deviceId}>{device.id}</Text>
+    <Text style={styles.deviceId}>{device.id}</Text>
 
-            <Text style={styles.rssi}>
-              RSSI: {device.rssi ?? 'unknown'}
-            </Text>
-          </View>
-        ))}
+    <Text style={styles.rssi}>
+      RSSI: {device.rssi ?? 'unknown'}
+    </Text>
+
+    <Pressable
+      style={styles.connectButton}
+      onPress={() => connectToDevice(device)}
+      disabled={connectingDeviceId !== null}>
+      <Text style={styles.connectButtonText}>
+        {connectingDeviceId === device.id
+          ? 'CONNECTING...'
+          : connectedDeviceId === device.id
+          ? 'CONNECTED'
+          : 'CONNECT'}
+      </Text>
+    </Pressable>
+  </View>
+))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -186,4 +240,24 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 14,
   },
+  connectButton: {
+  marginTop: 12,
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 8,
+  backgroundColor: '#333333',
+  alignItems: 'center',
+},
+
+connectButtonText: {
+  color: '#ffffff',
+  fontSize: 14,
+  fontWeight: '700',
+},
+
+connectionStatus: {
+  marginTop: 15,
+  fontSize: 15,
+  fontWeight: '600',
+},
 });
