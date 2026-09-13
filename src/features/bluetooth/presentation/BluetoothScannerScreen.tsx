@@ -56,6 +56,9 @@ export function BluetoothScannerScreen() {
 );
 
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
+  const [readResult, setReadResult] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  
   const startScan = async () => {
     setError(null);
 
@@ -124,6 +127,33 @@ const connectToDevice = async (device: Device) => {
   }
 };
 
+const readPanicCharacteristic = async () => {
+  if (!connectedDeviceId) {
+    return;
+  }
+
+  try {
+    setError(null);
+    setReading(true);
+    setReadResult(null);
+
+    const value = await connection.readPanicCharacteristic(
+      connectedDeviceId,
+    );
+
+    setReadResult(`Received: ${value}`);
+  } catch (readError) {
+    const message =
+      readError instanceof Error
+        ? readError.message
+        : 'Failed to read panic characteristic.';
+
+    setError(message);
+  } finally {
+    setReading(false);
+  }
+};
+
   useEffect(() => {
   return () => {
     scanner.stop();
@@ -145,6 +175,25 @@ const connectToDevice = async (device: Device) => {
 
 {connectionStatus && (
   <Text style={styles.connectionStatus}>{connectionStatus}</Text>
+)}
+
+{connectedDeviceId && (
+  <View style={styles.readSection}>
+    <Pressable
+      style={styles.button}
+      onPress={readPanicCharacteristic}
+      disabled={reading}>
+      <Text style={styles.buttonText}>
+        {reading ? 'READING...' : 'READ PING'}
+      </Text>
+    </Pressable>
+
+    {readResult && (
+      <Text style={styles.readResult}>
+        {readResult}
+      </Text>
+    )}
+  </View>
 )}
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -260,4 +309,15 @@ connectionStatus: {
   fontSize: 15,
   fontWeight: '600',
 },
+
+readSection: {
+  marginTop: 15,
+},
+
+readResult: {
+  marginTop: 12,
+  fontSize: 16,
+  fontWeight: '600',
+},
+
 });
