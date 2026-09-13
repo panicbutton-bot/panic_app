@@ -1,4 +1,5 @@
 import {
+  addEventListener,
   setServices,
   startAdvertising,
   stopAdvertising,
@@ -11,6 +12,8 @@ export const PANIC_CHARACTERISTIC_UUID =
   '4ad4a6d2-3f4a-477c-9832-5e0d8f7654d8';
 
 export class BluetoothPeripheral {
+ private writeSubscription?: () => void;
+
   start(): void {
     setServices([
       {
@@ -30,13 +33,31 @@ export class BluetoothPeripheral {
       },
     ]);
 
+    this.writeSubscription = addEventListener(
+      'peripheralWriteRequest',
+      ({centralId, serviceUUID, characteristicUUID, value}) => {
+        console.log('🔵 GATT WRITE RECEIVED');
+        console.log('Central:', centralId);
+        console.log('Service:', serviceUUID);
+        console.log('Characteristic:', characteristicUUID);
+        console.log('Value:', value);
+      },
+    );
+
     startAdvertising({
       serviceUUIDs: [PANIC_SERVICE_UUID],
       localName: 'PanicApp',
     });
+
+    console.log('🔵 BLE Peripheral started');
   }
 
   stop(): void {
+    this.writeSubscription?.();
+    this.writeSubscription = undefined;
+
     stopAdvertising();
+
+    console.log('🔵 BLE Peripheral stopped');
   }
 }

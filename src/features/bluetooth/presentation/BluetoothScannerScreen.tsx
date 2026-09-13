@@ -58,6 +58,10 @@ export function BluetoothScannerScreen() {
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [readResult, setReadResult] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
+
+  const [writing, setWriting] = useState(false);
+const [writeResult, setWriteResult] = useState<string | null>(null);
+  
   
   const startScan = async () => {
     setError(null);
@@ -127,6 +131,37 @@ const connectToDevice = async (device: Device) => {
   }
 };
 
+  const writePanicCharacteristic = async () => {
+    if (!connectedDeviceId) {
+      return;
+    }
+
+    try {
+      setError(null);
+      setWriting(true);
+      setWriteResult(null);
+
+      // "hello" in Base64
+      const value = 'aGVsbG8=';
+
+      await connection.writePanicCharacteristic(
+        connectedDeviceId,
+        value,
+      );
+
+      setWriteResult(`Sent: ${value}`);
+    } catch (writeError) {
+      const message =
+        writeError instanceof Error
+          ? writeError.message
+          : 'Failed to write panic characteristic.';
+
+      setError(message);
+    } finally {
+      setWriting(false);
+    }
+  };
+
 const readPanicCharacteristic = async () => {
   if (!connectedDeviceId) {
     return;
@@ -191,6 +226,25 @@ const readPanicCharacteristic = async () => {
     {readResult && (
       <Text style={styles.readResult}>
         {readResult}
+      </Text>
+    )}
+  </View>
+)}
+
+{connectedDeviceId && (
+  <View style={styles.writeSection}>
+    <Pressable
+      style={styles.button}
+      onPress={writePanicCharacteristic}
+      disabled={writing}>
+      <Text style={styles.buttonText}>
+        {writing ? 'WRITING...' : 'WRITE HELLO'}
+      </Text>
+    </Pressable>
+
+    {writeResult && (
+      <Text style={styles.writeResult}>
+        {writeResult}
       </Text>
     )}
   </View>
@@ -319,5 +373,15 @@ readResult: {
   fontSize: 16,
   fontWeight: '600',
 },
+
+  writeSection: {
+    marginTop: 15,
+  },
+
+  writeResult: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+  },
 
 });

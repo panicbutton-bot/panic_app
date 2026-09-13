@@ -31,6 +31,18 @@ export class BluetoothConnection {
     return characteristic.value;
   }
 
+  async writePanicCharacteristic(
+    deviceId: string,
+    value: string,
+  ): Promise<void> {
+    await bluetoothManager.writeCharacteristicWithResponseForDevice(
+      deviceId,
+      PANIC_SERVICE_UUID,
+      PANIC_CHARACTERISTIC_UUID,
+      value,
+    );
+  }
+
   async disconnect(deviceId: string): Promise<void> {
     try {
       await bluetoothManager.cancelDeviceConnection(deviceId);
